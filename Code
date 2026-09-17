@@ -1,1 +1,65 @@
-w.i.p
+import pyxel
+
+class Personagem:
+    def __init__(self, x, y):
+        # Inicializa o personagem com posição, dimensões, velocidade e estado inicial
+        self.x = x
+        self.y = y
+        self.altura = 57
+        self.largura = 24
+        self.velocidade = 3
+        self.cor = 3
+
+    def mover(self): # Movimenta o personagem com as teclas WASD
+        if pyxel.btn(pyxel.KEY_W):
+            self.y -= self.velocidade
+        if pyxel.btn(pyxel.KEY_A):
+            self.x -= self.velocidade
+        if pyxel.btn(pyxel.KEY_S):
+            self.y += self.velocidade
+        if pyxel.btn(pyxel.KEY_D):
+            self.x += self.velocidade
+
+    def draw(self):
+        pyxel.blt(self.x, self.y, 0, 0, 0, self.altura, self.largura, colkey = 12)
+
+class Cenario:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.altura = 260
+        self.largura = 20
+       
+    def draw(self):
+        pyxel.blt(self.x, self.y, 1, 0, 0, self.altura, self.largura)
+
+
+class Jogo:
+    # Classe principal do jogo
+    def __init__(self):
+        # Inicializa a janela e carrega os recursos
+        pyxel.init(420, 219, fps=30, title="Aero Shield")  # Tela de 420x219, 30 FPS
+        pyxel.image(0).load(0, 0, "plane_57x24.png")  # Carrega os sprites
+        pyxel.image(1).load(0, 0, "background_260x20.png")
+
+        
+        # Cria o personagem no jogo
+        self.Personagem = Personagem(1, 10)  # Começa na posição (70, 84)
+        self.Cenario = Cenario(0, 200)
+
+        # Inicia o loop principal do jogo
+        pyxel.run(self.update, self.draw)
+
+    def update(self):
+        # Atualiza o estado do jogo
+        self.Personagem.mover()
+
+    def draw(self):
+        # Desenha os elementos na tela
+        pyxel.cls(12)  # Limpa a tela com a cor de fundo
+        pyxel.rect(0, 200, 420, 20, 11)  # Desenha o "chão" (área verde) (((3)))
+        self.Personagem.draw()
+        self.Cenario.draw()
+
+# Inicializa o jogo
+Jogo()
