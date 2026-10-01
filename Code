@@ -1,8 +1,7 @@
 import pyxel
 
 class Personagem:
-    def __init__(self, x, y):
-        # Inicializa o personagem com posição, dimensões, velocidade e estado inicial
+    def __init__(self, x, y): # Inicializa o personagem com posição, dimensões e velocidade
         self.x = x
         self.y = y
         self.altura = 57
@@ -20,46 +19,52 @@ class Personagem:
         if pyxel.btn(pyxel.KEY_D):
             self.x += self.velocidade
 
-    def draw(self):
+    def draw(self): # Desenha o personagem
         pyxel.blt(self.x, self.y, 0, 0, 0, self.altura, self.largura, colkey = 12)
 
-class Cenario:
+class Cenario:              # Classe para o cenário de fundo com a velocidade que ele se move
     def __init__(self, x, y):
         self.x = x
         self.y = y
-        self.altura = 260
-        self.largura = 20
+        self.largura = 210
+        self.altura = 20
+        self.velocidade = 2 # Quantidade de pixels que o cenário se move por update
+        self.delay = 0      # Quantidade de updates para movimentar o cenário
        
-    def draw(self):
-        pyxel.blt(self.x, self.y, 1, 0, 0, self.altura, self.largura)
+    def draw(self):                                                          # Desenha os sprites do fundo
+        pyxel.blt(self.x, self.y, 1, 0, 0, self.largura, self.altura)        # Desenha a primeira metade
+        pyxel.blt(self.x + 210, self.y, 1, 0, 20, self.largura, self.altura) # Desenha a segunda metade
+        pyxel.blt(self.x + 420, self.y, 1, 0, 0, self.largura, self.altura)  # Cópia da primeira metade para a criação do looping
+        pyxel.blt(self.x + 630, self.y, 1, 0, 20, self.largura, self.altura) # Cópia da segunda metade para a criação do looping
+
+    def mover(self):          # Movimenta o cenário de fundo
+        if self.delay >= 0:   # Valor especificado para movimentar o cenário
+            self.x -= self.velocidade
+            self.delay += 1
+        elif self.delay <15:  # Aumenta o valor do delay para gerar o atraso
+            self.delay += 1
+        elif self.delay ==15: # Reseta o valor para movimentar o cenário novamente
+            self.delay = 0
+        if self.x <= -420:    # Faz a metade do cenário que saiu da tela voltar para o outro lado criando o looping
+            self.x = 0
 
 
-class Jogo:
-    # Classe principal do jogo
-    def __init__(self):
-        # Inicializa a janela e carrega os recursos
+class Jogo:             # Classe principal do jogo
+    def __init__(self):                                    # Inicializa a janela e carrega os recursos
         pyxel.init(420, 219, fps=30, title="Aero Shield")  # Tela de 420x219, 30 FPS
-        pyxel.image(0).load(0, 0, "plane_57x24.png")  # Carrega os sprites
-        pyxel.image(1).load(0, 0, "background_260x20.png")
+        pyxel.image(0).load(0, 0, "plane_57x24.png")       # Carrega os sprites do personagem
+        pyxel.image(1).load(0, 0, "background_210x40.png") # Carrega os sprites do fundo
+        self.Personagem = Personagem(1, 10)                # Cria o personagem do jogo na posição (1, 10)
+        self.Cenario = Cenario(0, 200)                     # Cria o cenário na posição (0, 200)
+        pyxel.run(self.update, self.draw)                  # Inicia o loop principal do jogo
 
-        
-        # Cria o personagem no jogo
-        self.Personagem = Personagem(1, 10)  # Começa na posição (70, 84)
-        self.Cenario = Cenario(0, 200)
-
-        # Inicia o loop principal do jogo
-        pyxel.run(self.update, self.draw)
-
-    def update(self):
-        # Atualiza o estado do jogo
+    def update(self):           # Atualiza o estado do jogo
         self.Personagem.mover()
+        self.Cenario.mover()
 
-    def draw(self):
-        # Desenha os elementos na tela
-        pyxel.cls(12)  # Limpa a tela com a cor de fundo
-        pyxel.rect(0, 200, 420, 20, 11)  # Desenha o "chão" (área verde) (((3)))
+    def draw(self):   # Desenha os elementos na tela
+        pyxel.cls(12) # Limpa a tela com a cor de fundo
         self.Personagem.draw()
         self.Cenario.draw()
 
-# Inicializa o jogo
-Jogo()
+Jogo() # Inicializa o jogo
