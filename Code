@@ -4,10 +4,9 @@ class Personagem:
     def __init__(self, x, y): # Inicializa o personagem com posição, dimensões e velocidade
         self.x = x
         self.y = y
-        self.altura = 57
-        self.largura = 24
-        self.velocidade = 3
-        self.cor = 3
+        self.largura = 57
+        self.altura = 24
+        self.velocidade = 2
 
     def mover(self): # Movimenta o personagem com as teclas WASD
         if pyxel.btn(pyxel.KEY_W):
@@ -18,9 +17,17 @@ class Personagem:
             self.y += self.velocidade
         if pyxel.btn(pyxel.KEY_D):
             self.x += self.velocidade
+        if self.x < 0:
+            self.x = 0
+        elif self.x > 387 - self.largura:
+            self.x = 387 - self.largura
+        if self.y < 0:
+            self.y = 0
+        elif self.y > 219 - self.largura:
+            self.y = 219 - self.largura
 
     def draw(self): # Desenha o personagem
-        pyxel.blt(self.x, self.y, 0, 0, 0, self.altura, self.largura, colkey = 12)
+        pyxel.blt(self.x, self.y, 0, 0, 0, self.largura, self.altura, colkey = 12)
 
 class Cenario:              # Classe para o cenário de fundo com a velocidade que ele se move
     def __init__(self, x, y):
@@ -28,8 +35,8 @@ class Cenario:              # Classe para o cenário de fundo com a velocidade q
         self.y = y
         self.largura = 210
         self.altura = 20
-        self.velocidade = 2 # Quantidade de pixels que o cenário se move por update
-        self.delay = 0      # Quantidade de updates para movimentar o cenário
+        self.velocidade = 1 # Quantidade de pixels que o cenário se move por update
+        self.delay = 0      # Valor de updates para movimentar o cenário
        
     def draw(self):                                                          # Desenha os sprites do fundo
         pyxel.blt(self.x, self.y, 1, 0, 0, self.largura, self.altura)        # Desenha a primeira metade
@@ -38,7 +45,7 @@ class Cenario:              # Classe para o cenário de fundo com a velocidade q
         pyxel.blt(self.x + 630, self.y, 1, 0, 20, self.largura, self.altura) # Cópia da segunda metade para a criação do looping
 
     def mover(self):          # Movimenta o cenário de fundo
-        if self.delay >= 0:   # Valor especificado para movimentar o cenário
+        if self.delay == 0:   # Valor especificado para movimentar o cenário
             self.x -= self.velocidade
             self.delay += 1
         elif self.delay <15:  # Aumenta o valor do delay para gerar o atraso
@@ -48,23 +55,41 @@ class Cenario:              # Classe para o cenário de fundo com a velocidade q
         if self.x <= -420:    # Faz a metade do cenário que saiu da tela voltar para o outro lado criando o looping
             self.x = 0
 
+class enemy:
+    def __init__(self): # Inicializa o personagem com posição, dimensões e velocidade
+        import random
+        self.x = random.randint(450, 600)
+        self.y = random.randint(5, 190)
+        self.largura = 54
+        self.altura = 24
+        self.velocidade = 1
 
-class Jogo:             # Classe principal do jogo
+    def mover(self): # Movimenta o inimigo de forma constante
+        self.x -= self.velocidade
+
+    def draw(self): # Desenha o personagem
+        pyxel.blt(self.x, self.y, 0, 0, 24, self.largura, self.altura, colkey = 12)
+
+
+class Jogo:                                                # Classe principal do jogo
     def __init__(self):                                    # Inicializa a janela e carrega os recursos
         pyxel.init(420, 219, fps=30, title="Aero Shield")  # Tela de 420x219, 30 FPS
-        pyxel.image(0).load(0, 0, "plane_57x24.png")       # Carrega os sprites do personagem
+        pyxel.image(0).load(0, 0, "planes_57x48.png")      # Carrega os sprites do personagem
         pyxel.image(1).load(0, 0, "background_210x40.png") # Carrega os sprites do fundo
         self.Personagem = Personagem(1, 10)                # Cria o personagem do jogo na posição (1, 10)
+        self.enemy = enemy()
         self.Cenario = Cenario(0, 200)                     # Cria o cenário na posição (0, 200)
         pyxel.run(self.update, self.draw)                  # Inicia o loop principal do jogo
 
-    def update(self):           # Atualiza o estado do jogo
+    def update(self): # Atualiza o estado do jogo
         self.Personagem.mover()
+        self.enemy.mover()
         self.Cenario.mover()
 
     def draw(self):   # Desenha os elementos na tela
         pyxel.cls(12) # Limpa a tela com a cor de fundo
-        self.Personagem.draw()
         self.Cenario.draw()
+        self.enemy.draw()
+        self.Personagem.draw()
 
 Jogo() # Inicializa o jogo
