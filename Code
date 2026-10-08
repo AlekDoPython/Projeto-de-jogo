@@ -19,14 +19,14 @@ class Personagem:
             self.x += self.velocidade
         if self.x < 0:
             self.x = 0
-        elif self.x > 387 - self.largura:
-            self.x = 387 - self.largura
+        elif self.x > 420 - self.largura:
+            self.x = 420 - self.largura
         if self.y < 0:
             self.y = 0
         elif self.y > 219 - self.largura:
             self.y = 219 - self.largura
 
-    def draw(self): # Desenha o personagem
+    def draw(self): # Desenha o personagem com suas respectivas dimenções
         pyxel.blt(self.x, self.y, 0, 0, 0, self.largura, self.altura, colkey = 12)
 
 class Cenario:              # Classe para o cenário de fundo com a velocidade que ele se move
@@ -56,19 +56,26 @@ class Cenario:              # Classe para o cenário de fundo com a velocidade q
             self.x = 0
 
 class enemy:
-    def __init__(self): # Inicializa o personagem com posição, dimensões e velocidade
-        import random
-        self.x = random.randint(450, 600)
-        self.y = random.randint(5, 190)
+    def __init__(self):                   # Inicializa o inimigo com posição, dimensões e velocidade
+        import random                     # Importa a função random para gerar os números
+        self.x = random.randint(450, 600) # Faz o inimigo aparecer em um distância aleatória mas sempre fora da tela
+        self.y = random.randint(5, 190)   # Faz o inimigo aparecer em uma altura aleatória respeitando o limite de altura do jogador
         self.largura = 54
         self.altura = 24
         self.velocidade = 1
+        self.hp = 10                      # Quantidade de tiros que o inimigo pode sofrer antes de morrer (atualmente sem uso)
+        self.alive = True                 # Verifica se o inimigo está vivo (solução temporária)
 
-    def mover(self): # Movimenta o inimigo de forma constante
-        self.x -= self.velocidade
+    def mover(self):              # Movimento do inimigo
+        self.x -= self.velocidade # Movimenta o inimigo de forma constante
 
-    def draw(self): # Desenha o personagem
-        pyxel.blt(self.x, self.y, 0, 0, 24, self.largura, self.altura, colkey = 12)
+    def draw(self):
+        if self.alive == True: # Desenha o personagem se ele estiver vivo
+            pyxel.blt(self.x, self.y, 0, 0, 24, self.largura, self.altura, colkey = 12)
+
+    def die(self): # Faz o inimigo morrer se determinada condição for satisfeita e concede os pontos para o player (wip)
+        pass
+
 
 
 class Jogo:                                                # Classe principal do jogo
@@ -77,14 +84,22 @@ class Jogo:                                                # Classe principal do
         pyxel.image(0).load(0, 0, "planes_57x48.png")      # Carrega os sprites do personagem
         pyxel.image(1).load(0, 0, "background_210x40.png") # Carrega os sprites do fundo
         self.Personagem = Personagem(1, 10)                # Cria o personagem do jogo na posição (1, 10)
-        self.enemy = enemy()
+        self.enemy = enemy()                               # Cria o inimigo
         self.Cenario = Cenario(0, 200)                     # Cria o cenário na posição (0, 200)
+        self.hp = 3                                        # Quantidade de vezes que o player pode tomar dano antes de perder (atualmente sem uso)
         pyxel.run(self.update, self.draw)                  # Inicia o loop principal do jogo
 
-    def update(self): # Atualiza o estado do jogo
+    def update(self):                                # Atualiza o estado do jogo
         self.Personagem.mover()
         self.enemy.mover()
         self.Cenario.mover()
+        if self.colide(self.Personagem, self.enemy): # Verifica se o player colidiu com um inimigo
+            self.hp -= 1                             # Se colidiu, o player perde 1 de vida
+            self.enemy.alive = False                 # Faz o inimigo morrer se colidir com o player (solução temporária)
+
+    def colide(self, P, E):
+        return (P.x < E.x + E.largura and P.x + P.largura > E.x and P.y < E.y + E.altura and P.y + P.altura > E.y) # Função para verificar colisão
+
 
     def draw(self):   # Desenha os elementos na tela
         pyxel.cls(12) # Limpa a tela com a cor de fundo
