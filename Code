@@ -23,8 +23,8 @@ class Personagem:
             self.x = 420 - self.largura
         if self.y < 0:
             self.y = 0
-        elif self.y > 219 - self.largura:
-            self.y = 219 - self.largura
+        elif self.y > 219 - self.altura:
+            self.y = 219 - self.altura
 
     def draw(self): # Desenha o personagem com suas respectivas dimenções
         pyxel.blt(self.x, self.y, 0, 0, 0, self.largura, self.altura, colkey = 12)
