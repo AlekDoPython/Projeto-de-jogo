@@ -211,6 +211,7 @@ class Jogo:                                                # Classe principal do
         self.game_over = False
         self.game_win = False
         self.win_delay = 60
+        self.tutorial = 180
         self.goal = random.randint(15, 30)
         self.goal_count = 0
         self.damage = 0
