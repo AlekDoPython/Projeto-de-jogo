@@ -103,7 +103,7 @@ class Jogo:                                                # Classe principal do
     def __init__(self):                                    # Inicializa a janela e carrega os recursos
         import random
         pyxel.init(420, 219, fps=30, title="Aero Shield")  # Tela de 420x219, 30 FPS
-        pyxel.image(0).load(0, 0, "planes_164x88.png")      # Carrega os sprites do personagem
+        pyxel.image(0).load(0, 0, "planes_164x88.png")     # Carrega os sprites do personagem
         pyxel.image(1).load(0, 0, "background_210x40.png") # Carrega os sprites do fundo
         self.boom = []                                     # Lista que armazena todas as animações de explosão
         self.score = 0                                     # Pontuação inicial
