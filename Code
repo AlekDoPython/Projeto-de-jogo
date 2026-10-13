@@ -6,7 +6,10 @@ class Personagem:
         self.y = y
         self.largura = 57
         self.altura = 24
-        self.velocidade = 2
+        self.velocidade = 1   # Velocidade que o jogador se movimenta pela tela
+        self.shots = []       # Lista para registrar múltiplos tiros
+        self.shot_spd = 8     # Velocidade que o tiro viaja na tela
+        self.shot_delay = 8   # Intervalo de cada disparo por update
 
     def mover(self): # Movimenta o personagem com as teclas WASD
         if pyxel.btn(pyxel.KEY_W):
@@ -17,6 +20,8 @@ class Personagem:
             self.y += self.velocidade
         if pyxel.btn(pyxel.KEY_D):
             self.x += self.velocidade
+
+        # Para o movimento do jogador se ele for sair da tela
         if self.x < 0:
             self.x = 0
         elif self.x > 420 - self.largura:
@@ -26,8 +31,25 @@ class Personagem:
         elif self.y > 219 - self.altura:
             self.y = 219 - self.altura
 
-    def draw(self): # Desenha o personagem com suas respectivas dimenções
-        pyxel.blt(self.x, self.y, 0, 0, 0, self.largura, self.altura, colkey = 12)
+        self.shot_delay -= 1
+        if self.shot_delay == 0: # Valor para permitir o próximo tiro
+            if pyxel.btnp(pyxel.KEY_SPACE, 0, 1):
+                Nshot = {"x": self.x + self.largura - 18, "y": self.y + 4}
+                self.shots.append(Nshot)
+            self.shot_delay = 8 # Retorna o valor original para os próximos tiros
+        for shot in self.shots[:]:
+            shot["x"] += self.shot_spd
+            if shot["x"] > 420:
+                self.shots.remove(shot)
+    def draw(self, hp): # Desenha o personagem com suas respectivas dimenções
+        if hp > 1:
+            pyxel.blt(self.x, self.y, 0, 0, 0, self.largura, self.altura, colkey = 12)
+        elif hp == 1:
+            pyxel.blt(self.x, self.y, 0, 57, 0, self.largura, self.altura, colkey = 12)
+        else:
+            pyxel.blt(self.x + 10, self.y - 5, 0, 114, 0, 50, 50, colkey = 12)
+        for shot in self.shots:
+            pyxel.rect(shot["x"], shot["y"], 2, 1, 10)
 
 class Cenario:              # Classe para o cenário de fundo com a velocidade que ele se move
     def __init__(self, x, y):
@@ -58,7 +80,7 @@ class Cenario:              # Classe para o cenário de fundo com a velocidade q
 class enemy:
     def __init__(self):                   # Inicializa o inimigo com posição, dimensões e velocidade
         import random                     # Importa a função random para gerar os números
-        self.x = random.randint(450, 600) # Faz o inimigo aparecer em um distância aleatória mas sempre fora da tela
+        self.x = 500                      # Faz o inimigo aparecer em um distância aleatória mas sempre fora da tela
         self.y = random.randint(5, 190)   # Faz o inimigo aparecer em uma altura aleatória respeitando o limite de altura do jogador
         self.largura = 54
         self.altura = 24
@@ -67,44 +89,162 @@ class enemy:
         self.alive = True                 # Verifica se o inimigo está vivo (solução temporária)
 
     def mover(self):              # Movimento do inimigo
-        self.x -= self.velocidade # Movimenta o inimigo de forma constante
+        if self.alive:
+            self.x -= self.velocidade # Movimenta o inimigo de forma constante
 
     def draw(self):
         if self.alive == True: # Desenha o personagem se ele estiver vivo
-            pyxel.blt(self.x, self.y, 0, 0, 24, self.largura, self.altura, colkey = 12)
-
-    def die(self): # Faz o inimigo morrer se determinada condição for satisfeita e concede os pontos para o player (wip)
-        pass
-
-
+            if self.hp > 5:
+                pyxel.blt(self.x, self.y, 0, 0, 24, self.largura, self.altura, colkey = 12)
+            else:
+                pyxel.blt(self.x, self.y, 0, 54, 24, self.largura, self.altura, colkey = 12)
 
 class Jogo:                                                # Classe principal do jogo
     def __init__(self):                                    # Inicializa a janela e carrega os recursos
+        import random
         pyxel.init(420, 219, fps=30, title="Aero Shield")  # Tela de 420x219, 30 FPS
-        pyxel.image(0).load(0, 0, "planes_57x48.png")      # Carrega os sprites do personagem
+        pyxel.image(0).load(0, 0, "planes_164x88.png")      # Carrega os sprites do personagem
         pyxel.image(1).load(0, 0, "background_210x40.png") # Carrega os sprites do fundo
-        self.Personagem = Personagem(1, 10)                # Cria o personagem do jogo na posição (1, 10)
+        self.boom = []                                     # Lista que armazena todas as animações de explosão
+        self.score = 0                                     # Pontuação inicial
+        self.game_over = False
+        self.game_win = False
+        self.win_delay = 60                                # Intervalo de tempo antes de mostrar a tela de vitória
+        self.enemies = []                                  # Lista que armazena todos os inimigos gerados
+        self.goal = random.randint(15, 25)                 # Número de inimigos que vão aparecer na partida
+        self.goal_count = 0                                # Contador de abates
+        self.damage = 0                                    # Dano que a base recebeu
+        self.spawn_delay = 0
+        self.spawn_random = random.randint(60, 160)        # Gera um valor aleatório de updates para definir o spawn do próximo inimigo
+        self.Personagem = Personagem(1, 20)                # Cria o personagem do jogo na posição (1, 20)
         self.enemy = enemy()                               # Cria o inimigo
         self.Cenario = Cenario(0, 200)                     # Cria o cenário na posição (0, 200)
-        self.hp = 3                                        # Quantidade de vezes que o player pode tomar dano antes de perder (atualmente sem uso)
+        self.hpP = 3                                       # Quantidade de danos que o player pode tomar dano antes de perder
+        self.hpB = 3                                       # Quantidade de danos que a base pode tomar antes de ser destruida (se o inimigo passar para o outro lado da tela)
+        if self.enemy.hp <= 0:
+            self.enemy.alive = False
+            booms = {"x": self.enemy.x, "y": self.enemy.y, "frame": 0, "tempo": 0}
+            self.boom.append(booms)
         pyxel.run(self.update, self.draw)                  # Inicia o loop principal do jogo
 
     def update(self):                                # Atualiza o estado do jogo
+        import random
+        if self.game_over or self.game_win:                           
+            if pyxel.btnp(pyxel.KEY_R):              
+                self.reset()                         # Reinicia o jogo se o jogador apertar R na tela de game over
+            return
         self.Personagem.mover()
         self.enemy.mover()
         self.Cenario.mover()
-        if self.colide(self.Personagem, self.enemy): # Verifica se o player colidiu com um inimigo
-            self.hp -= 1                             # Se colidiu, o player perde 1 de vida
-            self.enemy.alive = False                 # Faz o inimigo morrer se colidir com o player (solução temporária)
+
+        if (self.hpP <= 0) or (self.hpB <= 0):                      # Ativa o game over se o jogador ou a base perder toda a vida
+            self.game_over = True
+        if self.goal_count >= self.goal and len(self.enemies) == 0: # Ativa a vitória se o jogar matar todos os inimigos
+            self.win_delay -= 1
+            if self.win_delay <= 0:
+                self.game_win = True
+                self.score += 500
+                if self.hpP == 3:
+                    self.score += 250
+                if self.hpB == 3:
+                    self.score += 250
+
+
+        if self.goal_count < self.goal:
+            self.spawn_delay += 1
+        if self.spawn_delay >= self.spawn_random:    # Intervalo aleatório para outro inimigo aparecer
+            self.spawn_delay = 0
+            self.enemies.append(enemy())
+            self.goal_count += 1
+            self.spawn_random = random.randint(60, 160)
+
+        for e in self.enemies[:]:
+            e.mover()
+            if e.x < -100: # Se o inimigo passar pro outro lado, causa dano a base
+                self.enemies.remove(e)
+                self.hpB -= 1
+                self.damage += 1
+                self.score -= 25
+
+        for e in self.enemies[:]:
+            if e.alive and self.colide(self.Personagem, e):
+                self.hpP -= 1
+                self.score -= 25
+                e.alive = False
+                self.enemies.remove(e)
+                Nboom = {"x": e.x + 10, "y": e.y - 5, "frame": 0, "time": 0} # Cria explosão se o player colidir no inimigo
+                self.boom.append(Nboom)
+
+        for e in self.enemies[:]:
+            if e.alive:
+                for shot in self.Personagem.shots[:]:
+                    if (shot["x"] < e.x + e.largura and shot["x"] + 2 > e.x and shot["y"] < e.y + e.altura and shot["y"] + 1 > e.y):
+                        e.hp -= 1
+                        self.score += 5
+                        self.Personagem.shots.remove(shot)
+                        if e.hp <= 0:
+                            e.alive = False
+                            self.score += 100
+                            Nboom = {"x": e.x, "y": e.y, "frame": 0, "time": 0}
+                            self.boom.append(Nboom)
+                            self.enemies.remove(e)
+                            break
+
+        for booms in self.boom[:]:
+            booms["time"] += 1
+            if booms["time"] >= 8:          # Velocidade que cada frame aparece
+                booms["time"] = 0
+                booms["frame"] += 1
+                
+                if booms["frame"] >= 3: 
+                    self.boom.remove(booms) # Apaga a explosão quando o último frame aparecer
 
     def colide(self, P, E):
-        return (P.x < E.x + E.largura and P.x + P.largura > E.x and P.y < E.y + E.altura and P.y + P.altura > E.y) # Função para verificar colisão
+        return (P.x < E.x + E.largura and P.x + P.largura > E.x and P.y < E.y + E.altura and P.y + P.altura > E.y) # Verifica colisão entre o jogador e o inimigo
+
+    def reset(self): # Reseta o jogo pro estado inicial quando for chamado
+        import random
+        self.hpP = 3
+        self.hpB = 3
+        self.game_over = False
+        self.game_win = False
+        self.win_delay = 60
+        self.goal = random.randint(15, 30)
+        self.goal_count = 0
+        self.damage = 0
+        self.score = 0
+        self.Personagem = Personagem(1, 20)
+        self.enemy = enemy()
+        self.boom = []
+        self.enemies = []
 
 
-    def draw(self):   # Desenha os elementos na tela
-        pyxel.cls(12) # Limpa a tela com a cor de fundo
+    def draw(self):                                       # Desenha os elementos na tela
+        pyxel.cls(12)                                     # Limpa a tela com a cor de fundo
         self.Cenario.draw()
-        self.enemy.draw()
-        self.Personagem.draw()
+        if not self.game_over:
+            pyxel.text(360, 2, f"Score: {self.score}", 7) # Desenha o score no canto da tela até acabar a partida
+        pyxel.text(2, 2, f"HP: {self.hpP}", 8)            # Desenha o contador de hp do player
+        pyxel.text(2, 10, f"City HP: {self.hpB}", 9)      # Desenha o contador de hp da base
+        for e in self.enemies:                            # Desenha todos os inimigos da lista
+            e.draw()
+        self.Personagem.draw(self.hpP)
+        for booms in self.boom:
+            u_frame = booms["frame"] * 40 
+            pyxel.blt(booms["x"], booms["y"], 0, u_frame, 48, 40, 40, colkey=12)
+        if self.game_over:
+            pyxel.text(180, 100, "GAME OVER", 8)
+            if self.hpP == 0:
+                pyxel.text(172, 110, "Voce EXPLODIU", 2)
+            else:
+                pyxel.text(137, 110, "Voce falhou em proteger a cidade", 2)
+            pyxel.text(178, 120, f"Score: {self.score}", 14)
+            pyxel.text(153, 145, "Aperte R para reiniciar", 7)
+        if self.game_win:
+            pyxel.text(180, 60, "VITORIA", 10)
+            pyxel.text(120, 70, "Parabens, voce conseguiu proteger a cidade", 9)
+            pyxel.text(165, 90, f"Score total: {self.score}", 15)
+            pyxel.text(155, 100, f"Inimigos abatidos: {self.goal_count - self.damage}", 15)
+            pyxel.text(150, 120, "Aperte R para reiniciar", 7)
 
 Jogo() # Inicializa o jogo
