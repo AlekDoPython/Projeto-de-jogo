@@ -80,13 +80,13 @@ class Cenario:              # Classe para o cenário de fundo com a velocidade q
 class enemy:
     def __init__(self):                   # Inicializa o inimigo com posição, dimensões e velocidade
         import random                     # Importa a função random para gerar os números
-        self.x = 500                      # Faz o inimigo aparecer em um distância aleatória mas sempre fora da tela
+        self.x = 500                      # Faz o inimigo aparecer em um distância fora da tela
         self.y = random.randint(5, 190)   # Faz o inimigo aparecer em uma altura aleatória respeitando o limite de altura do jogador
         self.largura = 54
         self.altura = 24
         self.velocidade = 1
-        self.hp = 10                      # Quantidade de tiros que o inimigo pode sofrer antes de morrer (atualmente sem uso)
-        self.alive = True                 # Verifica se o inimigo está vivo (solução temporária)
+        self.hp = 10                      # Quantidade de tiros que o inimigo pode sofrer antes de morrer
+        self.alive = True                 # Verifica se o inimigo está vivo
 
     def mover(self):              # Movimento do inimigo
         if self.alive:
@@ -107,6 +107,7 @@ class Jogo:                                                # Classe principal do
         pyxel.image(1).load(0, 0, "background_210x40.png") # Carrega os sprites do fundo
         self.boom = []                                     # Lista que armazena todas as animações de explosão
         self.score = 0                                     # Pontuação inicial
+        self.tutorial = 180                                # Tempo que a mensagem de tutorial fica na tela (6 segundos)
         self.game_over = False
         self.game_win = False
         self.win_delay = 60                                # Intervalo de tempo antes de mostrar a tela de vitória
@@ -119,7 +120,7 @@ class Jogo:                                                # Classe principal do
         self.Personagem = Personagem(1, 20)                # Cria o personagem do jogo na posição (1, 20)
         self.enemy = enemy()                               # Cria o inimigo
         self.Cenario = Cenario(0, 200)                     # Cria o cenário na posição (0, 200)
-        self.hpP = 3                                       # Quantidade de danos que o player pode tomar dano antes de perder
+        self.hpP = 3                                       # Quantidade de danos que o jogador pode tomar dano antes de perder
         self.hpB = 3                                       # Quantidade de danos que a base pode tomar antes de ser destruida (se o inimigo passar para o outro lado da tela)
         if self.enemy.hp <= 0:
             self.enemy.alive = False
@@ -129,6 +130,7 @@ class Jogo:                                                # Classe principal do
 
     def update(self):                                # Atualiza o estado do jogo
         import random
+        self.tutorial -= 1
         if self.game_over or self.game_win:                           
             if pyxel.btnp(pyxel.KEY_R):              
                 self.reset()                         # Reinicia o jogo se o jogador apertar R na tela de game over
@@ -143,19 +145,19 @@ class Jogo:                                                # Classe principal do
             self.win_delay -= 1
             if self.win_delay <= 0:
                 self.game_win = True
-                self.score += 500
-                if self.hpP == 3:
-                    self.score += 250
+                self.score += 500                                   # Bonus por vencer a partida
+                if self.hpP == 3:                               
+                    self.score += 250                               # Bonus por vencer sem tomar dano
                 if self.hpB == 3:
-                    self.score += 250
+                    self.score += 250                               # Bonus por proteger a cidade perfeitamente
 
 
         if self.goal_count < self.goal:
             self.spawn_delay += 1
-        if self.spawn_delay >= self.spawn_random:    # Intervalo aleatório para outro inimigo aparecer
+        if self.spawn_delay >= self.spawn_random:    # Intervalo aleatório para o próximo inimigo aparecer jogador
             self.spawn_delay = 0
             self.enemies.append(enemy())
-            self.goal_count += 1
+            self.goal_count += 1                     # Adiciona o novo inimigo no contador até chegar na quantidade aleatória escolhida
             self.spawn_random = random.randint(60, 160)
 
         for e in self.enemies[:]:
@@ -172,7 +174,7 @@ class Jogo:                                                # Classe principal do
                 self.score -= 25
                 e.alive = False
                 self.enemies.remove(e)
-                Nboom = {"x": e.x + 10, "y": e.y - 5, "frame": 0, "time": 0} # Cria explosão se o player colidir no inimigo
+                Nboom = {"x": e.x + 10, "y": e.y - 5, "frame": 0, "time": 0} # Cria explosão se o jogador colidir no inimigo
                 self.boom.append(Nboom)
 
         for e in self.enemies[:]:
@@ -222,9 +224,11 @@ class Jogo:                                                # Classe principal do
     def draw(self):                                       # Desenha os elementos na tela
         pyxel.cls(12)                                     # Limpa a tela com a cor de fundo
         self.Cenario.draw()
-        if not self.game_over:
+        if self.tutorial >= 0:
+            pyxel.text(160, 100, "Segure space para atirar", 7)
+        if not (self.game_over or self.game_win):
             pyxel.text(360, 2, f"Score: {self.score}", 7) # Desenha o score no canto da tela até acabar a partida
-        pyxel.text(2, 2, f"HP: {self.hpP}", 8)            # Desenha o contador de hp do player
+        pyxel.text(2, 2, f"HP: {self.hpP}", 8)            # Desenha o contador de hp do jogador
         pyxel.text(2, 10, f"City HP: {self.hpB}", 9)      # Desenha o contador de hp da base
         for e in self.enemies:                            # Desenha todos os inimigos da lista
             e.draw()
@@ -242,7 +246,7 @@ class Jogo:                                                # Classe principal do
             pyxel.text(153, 145, "Aperte R para reiniciar", 7)
         if self.game_win:
             pyxel.text(180, 60, "VITORIA", 10)
-            pyxel.text(120, 70, "Parabens, voce conseguiu proteger a cidade", 9)
+            pyxel.text(115, 70, "Parabens, voce conseguiu proteger a cidade!", 9)
             pyxel.text(165, 90, f"Score total: {self.score}", 15)
             pyxel.text(155, 100, f"Inimigos abatidos: {self.goal_count - self.damage}", 15)
             pyxel.text(150, 120, "Aperte R para reiniciar", 7)
