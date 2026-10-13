@@ -88,7 +88,7 @@ class enemy:
         self.hp = 10                      # Quantidade de tiros que o inimigo pode sofrer antes de morrer
         self.alive = True                 # Verifica se o inimigo está vivo
 
-    def mover(self):              # Movimento do inimigo
+    def mover(self):                  # Movimento do inimigo
         if self.alive:
             self.x -= self.velocidade # Movimenta o inimigo de forma constante
 
